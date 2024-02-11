@@ -1,15 +1,15 @@
-STUID = 221220000
-STUNAME = 张三
+STUID = 123321123
+STUNAME = NAHxiao
 
 # DO NOT modify the following code!!!
 
 GITFLAGS = -q --author='tracer-ics2023 <tracer@njuics.org>' --no-verify --allow-empty
 
+	#-@git add $(NEMU_HOME)/.. -A --ignore-errors
+	#-@while (test -e .git/index.lock); do sleep 0.1; done
+	#-@(echo "> $(1)" && echo $(STUID) $(STUNAME) && uname -a && uptime) | git commit -F - $(GITFLAGS)
 # prototype: git_commit(msg)
 define git_commit
-	-@git add $(NEMU_HOME)/.. -A --ignore-errors
-	-@while (test -e .git/index.lock); do sleep 0.1; done
-	-@(echo "> $(1)" && echo $(STUID) $(STUNAME) && uname -a && uptime) | git commit -F - $(GITFLAGS)
 	-@sync
 endef
 
