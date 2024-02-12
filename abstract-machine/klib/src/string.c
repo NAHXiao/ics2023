@@ -4,7 +4,14 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
-size_t strlen(const char *s) { panic("Not implemented"); }
+size_t strlen(const char *s) {
+  size_t size = 0;
+  while (*s++) {
+    size++;
+  }
+  return size;
+  // panic("Not implemented");
+}
 
 //
 char *strcpy(char *dst, const char *src) {
@@ -16,7 +23,14 @@ char *strcpy(char *dst, const char *src) {
 }
 
 char *strncpy(char *dst, const char *src, size_t n) {
-  panic("Not implemented");
+  char *ret = dst;
+  for (; *src && n; n--) {
+    *dst++ = *src++;
+  }
+  while (n--) {
+    *dst++ = 0;
+  }
+  return ret;
 }
 
 //
@@ -40,7 +54,13 @@ int strcmp(const char *s1, const char *s2) {
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
-  panic("Not implemented");
+  while (n && *s1 && *s2 && *s1 == *s2) {
+    s1++;
+    s2++;
+    n--;
+  }
+  return (unsigned char)*s1 - (unsigned char)*s2;
+  // panic("Not implemented");
 }
 
 //
@@ -53,13 +73,29 @@ void *memset(void *s, int c, size_t n) {
 }
 
 void *memmove(void *dst, const void *src, size_t n) {
-  panic("Not implemented");
+  if (dst == src||(!dst&&!src))//同时为空才返回NULL,否则让系统报错去(经测试行为)
+    return dst;
+  void *ret = dst;
+
+  if ((uint8_t *)dst > (uint8_t *)src           //如果dst<src直接从低位开始忘高位复制即可，不会覆盖src
+      && (uint8_t *)dst < (uint8_t *)src + n) { //
+    uint8_t *dst = (uint8_t *)dst + n - 1;
+    uint8_t *src = (uint8_t *)src + n - 1;
+    while (n--)
+      *dst-- = *src--;
+  } else {
+    uint8_t *dst = (uint8_t *)dst;
+    uint8_t *src = (uint8_t *)src;
+    while (n--)
+      *dst++ = *src++;
+  }
+  return ret;
 }
 
 //
 void *memcpy(void *out, const void *in, size_t n) {
-  char *_out = (char *)out;
-  char *_in = (char *)in;
+  uint8_t *_out = (uint8_t *)out;
+  uint8_t *_in = (uint8_t *)in;
   while (n--)
     *_out++ = *_in++;
   return out;

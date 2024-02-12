@@ -8,9 +8,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//#define __NATIVE_USE_KLIB__
-
+//取消注释以链接到klib而不是glie
+#define __NATIVE_USE_KLIB__
+//为什么定义宏__NATIVE_USE_KLIB__之后就可以把native上的这些库函数链接到klib? 这具体是如何发生的? 尝试根据你在课堂上学习的链接相关的知识解释这一现象.
+//因为这些函数在klib中的定义和实现有
+//#if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
+//而编译器在本地有实现的时候优先使用本地的函数
 // string.h
 void  *memset    (void *s, int c, size_t n);
 void  *memcpy    (void *dst, const void *src, size_t n);
