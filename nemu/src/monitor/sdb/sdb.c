@@ -197,8 +197,10 @@ static int cmd_x(char *args) {
 static int cmd_p(char *args) {
   char *arg = strtok(NULL, "");
   if (arg) {
-    char *argbak = (char *)malloc(sizeof(char) * strlen(arg));
-    strcpy(argbak, arg);
+    int size = strlen(arg)+1;
+    char *argbak = (char *)malloc(sizeof(char) * size);
+    // strcpy(argbak, arg);
+    strncpy(argbak, arg, sizeof(char) * size );
     bool success = true;
     uint32_t result = expr(argbak, &success);
     if (success) {
@@ -207,6 +209,7 @@ static int cmd_p(char *args) {
     } else {
       printf("Invalid EXPR\n");
     }
+    free(argbak);
   }
   // Log("TODO");
   return 0;
@@ -214,8 +217,10 @@ static int cmd_p(char *args) {
 static int cmd_ph(char *args) {
   char *arg = strtok(NULL, "");
   if (arg) {
-    char *argbak = (char *)malloc(sizeof(char) * strlen(arg));
-    strcpy(argbak, arg);
+    int size = strlen(arg)+1;
+    char *argbak = (char *)malloc(sizeof(char) * size);
+    strncpy(argbak, arg, sizeof(char) * size);
+    // strcpy(argbak, arg);
     bool success = true;
     uint32_t result = expr(argbak, &success);
     if (success) {
@@ -224,6 +229,7 @@ static int cmd_ph(char *args) {
     } else {
       printf("Invalid EXPR\n");
     }
+    free(argbak);
   }
   // Log("TODO");
   return 0;
@@ -340,11 +346,15 @@ void init_sdb() {
   /* Initialize the watchpoint pool. */
   init_wp_pool();
   int ret = load_func_systab();
-  if(ret){
-      printf("Loaded %d Func symbols!\n",ret);
+  if (ret) {
+    printf("Loaded %d Func symbols!\n", ret);
   }
 }
-static int cmd_bt(char *args){
-    print_func_bt();
-    return 0;
+extern char* elf_file;
+static int cmd_bt(char *args) {
+  if(!elf_file){
+    printf("WARNNING: 未从elf文件加载符号\n");
+  }
+  print_func_bt();
+  return 0;
 }
