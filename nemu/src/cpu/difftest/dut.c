@@ -34,7 +34,7 @@ static int skip_dut_nr_inst = 0;
 
 // this is used to let ref skip instructions which
 // can not produce consistent behavior with NEMU
-void difftest_skip_ref() {
+void difftest_skip_ref() {//跳过nemu_trap类似指令
   is_skip_ref = true;
   // If such an instruction is one of the instruction packing in QEMU
   // (see below), we end the process of catching up with QEMU's pc to
@@ -52,7 +52,7 @@ void difftest_skip_ref() {
 // The semantic is
 //   Let REF run `nr_ref` instructions first.
 //   We expect that DUT will catch up with REF within `nr_dut` instructions.
-void difftest_skip_dut(int nr_ref, int nr_dut) {
+void difftest_skip_dut(int nr_ref, int nr_dut) {//跳过模拟器`打包执行`的指令
   skip_dut_nr_inst += nr_dut;
 
   while (nr_ref-- > 0) {

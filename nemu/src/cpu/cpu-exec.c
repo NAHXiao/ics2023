@@ -71,9 +71,9 @@ static void check_watchpoint() {
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) {
-    log_write("this: %s\n", _this->logbuf);
+    __nemu_log_write("this: %s\n", _this->logbuf);
     add_Iringbuf(_this->logbuf);
-    log_write("next: %s\n", s_next.logbuf);
+    __nemu_log_write("next: %s\n", s_next.logbuf);
   }
 #endif
   if (g_print_step) {

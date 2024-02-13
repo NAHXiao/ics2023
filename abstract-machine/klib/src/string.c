@@ -79,15 +79,15 @@ void *memmove(void *dst, const void *src, size_t n) {
 
   if ((uint8_t *)dst > (uint8_t *)src           //如果dst<src直接从低位开始忘高位复制即可，不会覆盖src
       && (uint8_t *)dst < (uint8_t *)src + n) { //
-    uint8_t *dst = (uint8_t *)dst + n - 1;
-    uint8_t *src = (uint8_t *)src + n - 1;
+    uint8_t *d = (uint8_t *)dst + n - 1;
+    uint8_t *s = (uint8_t *)src + n - 1;
     while (n--)
-      *dst-- = *src--;
+      *d-- = *s--;
   } else {
-    uint8_t *dst = (uint8_t *)dst;
-    uint8_t *src = (uint8_t *)src;
+    uint8_t *d = (uint8_t *)dst;
+    uint8_t *s = (uint8_t *)src;
     while (n--)
-      *dst++ = *src++;
+      *d++ = *s++;
   }
   return ret;
 }
