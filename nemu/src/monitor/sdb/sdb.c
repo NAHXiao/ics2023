@@ -130,10 +130,10 @@ static int cmd_si(char *args) {
   if (!arg) {
     cpu_exec(1);
   } else {
-    int n = atoi(arg);
-    while (n--) {
-      cpu_exec(1);
-    }
+    uint32_t n = atoi(arg);
+    // while (n--) {
+    cpu_exec(n);
+    // }
   }
   return 0;
 }
@@ -197,10 +197,10 @@ static int cmd_x(char *args) {
 static int cmd_p(char *args) {
   char *arg = strtok(NULL, "");
   if (arg) {
-    int size = strlen(arg)+1;
+    int size = strlen(arg) + 1;
     char *argbak = (char *)malloc(sizeof(char) * size);
     // strcpy(argbak, arg);
-    strncpy(argbak, arg, sizeof(char) * size );
+    strncpy(argbak, arg, sizeof(char) * size);
     bool success = true;
     uint32_t result = expr(argbak, &success);
     if (success) {
@@ -217,7 +217,7 @@ static int cmd_p(char *args) {
 static int cmd_ph(char *args) {
   char *arg = strtok(NULL, "");
   if (arg) {
-    int size = strlen(arg)+1;
+    int size = strlen(arg) + 1;
     char *argbak = (char *)malloc(sizeof(char) * size);
     strncpy(argbak, arg, sizeof(char) * size);
     // strcpy(argbak, arg);
@@ -234,7 +234,7 @@ static int cmd_ph(char *args) {
   // Log("TODO");
   return 0;
 }
-// TODO w EXPR 监视EXPR,发生变化时暂停程序
+// w EXPR 监视EXPR,发生变化时暂停程序
 static int cmd_w(char *args) {
 #ifdef CONFIG_WATCHPOINT
   char *arg = strtok(NULL, "");
@@ -244,7 +244,7 @@ static int cmd_w(char *args) {
     if (success) {
       Log("result : %u", result);
       new_wp(arg, result);
-      printf("Add watchpoint %s : %u\n", arg, result);
+      printf("Add watchpoint %s : %u | 0x%08x\n", arg, result, result);
     }
   } else {
     printf("Usage : w EXPR\n");
@@ -254,13 +254,15 @@ static int cmd_w(char *args) {
 #endif
   return 0;
 }
-// TODO d N 删除序号为N的监视点
+// d N 删除序号为N的监视点
 // static char *argg;
 static int cmd_d(char *args) {
   char *arg = strtok(NULL, " ");
   if (arg) {
     int NO = atoi(arg);
     free_wp(NO);
+  }else{
+    printf("Usage : d NO\n");
   }
   return 0;
 }
@@ -350,9 +352,9 @@ void init_sdb() {
     printf("Loaded %d Func symbols!\n", ret);
   }
 }
-extern char* elf_file;
+extern char *elf_file;
 static int cmd_bt(char *args) {
-  if(!elf_file){
+  if (!elf_file) {
     printf("WARNNING: 未从elf文件加载符号\n");
   }
   print_func_bt();

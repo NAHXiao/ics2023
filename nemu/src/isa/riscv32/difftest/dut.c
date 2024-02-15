@@ -30,7 +30,7 @@
 
 bool isa_difftest_checkregs(CPU_state *ref_r,
                             vaddr_t pc) { // 用于检查寄存器的值是否正确
-  // printf("%d\n",cpu.pc);
+                                          // printf("checkregs\n");
   // cpu.gpr[32],cpu.pc
   // assert(cpu.pc==pc);
   // isa_reg_display();
@@ -40,9 +40,15 @@ bool isa_difftest_checkregs(CPU_state *ref_r,
   for (int i = 0; i < 32; i++) {
     if (ref_r->gpr[i] != cpu.gpr[i]) {
       flag = false;
-      printf("reg[%d]:%s is different\n\tref(spike):0x%x\n\tdut( nemu):0x%x\n", i,
-             get_regname_by_num(i, name), ref_r->gpr[i], cpu.gpr[i]);
+      printf(
+          "reg[%d]:%s is different\n\tref(spike):0x%08x\n\tdut( nemu):0x%08x\n",
+          i, get_regname_by_num(i, name), ref_r->gpr[i], cpu.gpr[i]);
     }
+  }
+  if (!flag) {
+    printf("----------------------------------------------\n");
+    printf("pc:0x%08x error occured when checking regs\n", pc);
+    printf("----------------------------------------------\n");
   }
   return flag;
 }

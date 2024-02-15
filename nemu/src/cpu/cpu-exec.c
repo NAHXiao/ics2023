@@ -18,7 +18,6 @@
 #include <cpu/difftest.h>
 #include <locale.h>
 
-// shuchu next i
 #include <cpu/ifetch.h>
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -34,13 +33,16 @@ static struct {
   unsigned int end;
   unsigned int empty;
 } IRingBuf = {
-    .start = 0,
-    .end = 0,
-    .empty = 1,
-    .msg = {{0}},
+    .start = 0,   // start
+    .end = 0,     // end
+    .empty = 1,   // empty
+    .msg = {{0}}, //    msg1
+                  //    msg2
+                  //    ...
 };
-void print_Iringbuf();
+void print_Iringbuf(word_t pc);
 void add_Iringbuf(const char *msg);
+char *decode_and_get_logbuf(word_t pc, word_t size, char *logbuf);
 
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0; // 执行指令数量,这些全局变量也是只能执行一次的原因
@@ -52,6 +54,8 @@ static Decode s_next;
 void device_update();
 int updateall_wp(int *NO, uint32_t *old_val, uint32_t *new_val);
 
+static void ITrace(Decode *s);
+
 #ifdef CONFIG_WATCHPOINT
 static void check_watchpoint() {
   // DONE TODO TEST
@@ -61,7 +65,8 @@ static void check_watchpoint() {
   while ((ret = updateall_wp(&NO, &old_val, &new_val)) != -1) {
     if (ret == 1) {
       changed = true;
-      printf("Watchpoint %d: %u -> %u\n", NO, old_val, new_val);
+      printf("Watchpoint %d: %u | 0x%08x -> %u | 0x%08x \n", NO, old_val,
+             old_val, new_val, new_val);
     }
   }
   if (changed)
@@ -69,10 +74,17 @@ static void check_watchpoint() {
 }
 #endif
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
+  { // next inst
+    s_next.pc = _this->dnpc;
+    s_next.snpc = _this->dnpc;
+    s_next.dnpc = _this->dnpc;
+    s_next.isa.inst.val = inst_fetch(&s_next.snpc, 4);
+    ITrace(&s_next);
+  }
+
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) {
     __nemu_log_write("this: %s\n", _this->logbuf);
-    add_Iringbuf(_this->logbuf);
     __nemu_log_write("next: %s\n", s_next.logbuf);
   }
 #endif
@@ -86,20 +98,15 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 }
 
-static void ITrace(Decode *s);
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;
   s->snpc = pc; // static next pc
   isa_exec_once(s);
   cpu.pc = s->dnpc; // dynamic next pc
+#ifdef CONFIG_ITRACE
   ITrace(s);
-  { // next inst
-    s_next.pc = s->dnpc;
-    s_next.snpc = s->dnpc;
-    s_next.dnpc = s->dnpc;
-    s_next.isa.inst.val = inst_fetch(&s_next.snpc, 4);
-    ITrace(&s_next);
-  }
+  add_Iringbuf(s->logbuf);
+#endif
 }
 void ITrace(Decode *s) {
 #ifdef CONFIG_ITRACE
@@ -157,9 +164,7 @@ static void statistic() {
 }
 
 void assert_fail_msg() {
-  ITrace(&s_next);
-  add_Iringbuf(s_next.logbuf);
-  print_Iringbuf();
+  print_Iringbuf(cpu.pc);
   isa_reg_display();
   statistic();
 }
@@ -205,30 +210,51 @@ void cpu_exec(uint64_t n) {
   }
 }
 
-void print_Iringbuf() {
+void print_Iringbuf(word_t pc) {
   if (IRingBuf.empty)
     return;
+  {
+    // check curpc是否在end
+    uint32_t endpc;
+    sscanf(IRingBuf.msg[(IRingBuf.end-1+BufNum) % BufNum], "0x%x", &endpc);
+    if (endpc != pc) {
+      char *logbuf = (char *)malloc(BufLen);
+      add_Iringbuf(decode_and_get_logbuf(pc, 4, logbuf));
+    }
+    // 获取T
+  }
   int T;
+  int cur = 0;
   if (IRingBuf.start == IRingBuf.end) {
     T = BufNum;
   } else {
     T = IRingBuf.end < IRingBuf.start ? IRingBuf.end + BufNum - IRingBuf.start
                                       : IRingBuf.end - IRingBuf.start;
   }
-  uint32_t pc;
-printf("#####INST TRACE#####\n");
-  for (int i = 0; i < T; i++) {
-      sscanf(IRingBuf.msg[(IRingBuf.start + i) % BufNum],"0x%x",&pc);
-      if(pc==cpu.pc){
-          printf("--> ");
-      }else{
-          printf("    ");
+  // 获取curpc对应T
+  {
+    uint32_t tmppc;
+    for (int i = 0; i < T; i++) {
+      sscanf(IRingBuf.msg[(IRingBuf.start + i) % BufNum], "0x%x", &tmppc);
+      if (pc == tmppc) {
+        cur = i;
       }
-      printf("%s\n", IRingBuf.msg[(IRingBuf.start + i) % BufNum]);
+    }
   }
-printf("--------------------\n");
+  // 打印
+  printf("----------------------------------------------\n");
+  printf("#####INST TRACE#####\n");
+  for (int i = 0; i < T; i++) {
+    if (i == cur) {
+      printf("--> ");
+    } else {
+      printf("    ");
+    }
+    printf("%s\n", IRingBuf.msg[(IRingBuf.start + i) % BufNum]);
+  }
+  printf("----------------------------------------------\n");
 }
-void add_Iringbuf(const char *msg) {
+void add_Iringbuf(const char *msg) { // strcpy
   if (strlen(msg) >= BufLen)
     assert(0);
   if (IRingBuf.empty || IRingBuf.start != IRingBuf.end) { // empty / +
@@ -238,5 +264,18 @@ void add_Iringbuf(const char *msg) {
   } else if (IRingBuf.start == IRingBuf.end) { // full
     strcpy(IRingBuf.msg[IRingBuf.end++ % BufNum], msg);
     IRingBuf.start++;
+    IRingBuf.start %= BufNum;
+    IRingBuf.end %= BufNum;
   }
+}
+char *decode_and_get_logbuf(word_t pc, word_t size,
+                            char *logbuf) { // riscv32指令长度始终为32bit
+  Decode s2;
+  s2.pc = pc;
+  s2.snpc = pc;
+  // s2.dnpc = pc + 4;
+  s2.isa.inst.val = inst_fetch(&s2.snpc, size);
+  ITrace(&s2);
+  strcpy(logbuf, s2.logbuf);
+  return logbuf;
 }

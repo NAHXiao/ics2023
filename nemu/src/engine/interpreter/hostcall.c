@@ -41,7 +41,7 @@ __attribute__((noinline)) void invalid_inst(vaddr_t thispc) {
   printf("逻辑排序:\n"
          "\t%02x %02x %02x %02x\n\t%02x %02x %02x %02x ...\n",
          p[3], p[2], p[1], p[0], p[7], p[6], p[5], p[4]);
-  printf("逻辑排序(BIN):\n"
+  printf("逻辑排序(BIN)(指令顺序)):\n"
          "\t%08b %08b %08b %08b\n\t%08b %08b %08b %08b ...\n",
          p[3], p[2], p[1], p[0], p[7], p[6], p[5], p[4]);
   // printf("逻辑排序(BIN)(riscv32):\n"
@@ -61,6 +61,8 @@ __attribute__((noinline)) void invalid_inst(vaddr_t thispc) {
                   "* Every line of untested code is always wrong!\n\n",
                   ANSI_FG_RED),
          isa_logo);
-
+  // char buf[128];
+  // add_Iringbuf("new: ");
+  print_Iringbuf(thispc);
   set_nemu_state(NEMU_ABORT, thispc, -1);
 }

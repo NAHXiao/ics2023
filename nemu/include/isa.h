@@ -56,6 +56,13 @@ word_t isa_query_intr();
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc);
 void isa_difftest_attach();
 //custom func trace 
+#ifdef CONFIG_FTRACE
 void print_func_bt();
 int load_func_systab();
+#else
+inline void print_func_bt(){return;}
+inline int load_func_systab(){return 0;}
+#endif
+void print_Iringbuf(word_t pc);
+void add_Iringbuf(const char *msg);
 #endif
