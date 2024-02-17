@@ -144,10 +144,10 @@
   })
 
 // MyCustomLog
-#ifdef MYLOG
+#ifdef CONFIG_MYLOG
 #define MyLog(format, ...)                                                     \
   do {                                                                         \
-    printf("\033[32m[%s,%d,%s] " format "\033[0m\n", __FILE__, __LINE__,       \
+    fprintf(stderr,"\033[32m[%s,%d,%s] " format "\033[0m\n", __FILE__, __LINE__,       \
            __func__, ##__VA_ARGS__);                                           \
   } while (0)
 #else

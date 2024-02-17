@@ -1,6 +1,5 @@
 #include <am.h>
 #include <SDL2/SDL.h>
-#include <fenv.h>
 
 //#define MODE_800x600
 #ifdef MODE_800x600
@@ -17,7 +16,8 @@
 #define GMASK 0x0000ff00
 #define BMASK 0x000000ff
 #define AMASK 0x00000000
-
+//1
+/*
 static SDL_Window *window = NULL;
 static SDL_Surface *surface = NULL;
 
@@ -42,17 +42,7 @@ void __am_gpu_init() {
   SDL_AddTimer(1000 / FPS, texture_sync, NULL);
 }
 
-void __am_gpu_config(AM_GPU_CONFIG_T *cfg) {
-  *cfg = (AM_GPU_CONFIG_T) {
-    .present = true, .has_accel = false,
-    .width = W, .height = H,
-    .vmemsz = 0
-  };
-}
 
-void __am_gpu_status(AM_GPU_STATUS_T *stat) {
-  stat->ready = true;
-}
 
 void __am_gpu_fbdraw(AM_GPU_FBDRAW_T *ctl) {
   int x = ctl->x, y = ctl->y, w = ctl->w, h = ctl->h;
@@ -63,4 +53,47 @@ void __am_gpu_fbdraw(AM_GPU_FBDRAW_T *ctl) {
   SDL_Rect rect = { .x = x, .y = y };
   SDL_BlitSurface(s, NULL, surface, &rect);
   SDL_FreeSurface(s);
+}
+*/
+void __am_gpu_config(AM_GPU_CONFIG_T *cfg) {
+  *cfg = (AM_GPU_CONFIG_T) {
+    .present = true, .has_accel = false,
+    .width = W, .height = H,
+    .vmemsz = 0
+  };
+}
+void __am_gpu_status(AM_GPU_STATUS_T *stat) {
+  stat->ready = true;
+}
+//2
+//
+static SDL_Window *window = NULL;
+static uint32_t *vmem = NULL;
+static SDL_Renderer *renderer = NULL;
+static SDL_Texture *texture = NULL;
+static void sync();
+void __am_gpu_init() {
+  vmem = (uint32_t *)malloc(W * H * sizeof(uint32_t));
+  SDL_CreateWindowAndRenderer(W, H, 0, &window, &renderer);
+  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+                              SDL_TEXTUREACCESS_STATIC, W, H);
+
+  SDL_RenderPresent(renderer);
+}
+void __am_gpu_fbdraw(AM_GPU_FBDRAW_T *ctl) {
+  uint32_t *pixel = (uint32_t *)(ctl->pixels);
+  for (int _w = 0; _w < ctl->w; _w++) {
+    for (int _h = 0; _h < ctl->h; _h++) {
+      vmem[((ctl->y + _h) * W + ctl->x + _w)] = pixel[_h * (ctl->w) + _h];
+    }
+  }
+  if (ctl->sync) {
+  sync();
+  }
+}
+static void sync() {
+  SDL_UpdateTexture(texture, NULL, vmem, W * sizeof(uint32_t));
+  SDL_RenderClear(renderer);
+  SDL_RenderCopy(renderer, texture, NULL, NULL);
+  SDL_RenderPresent(renderer);
 }

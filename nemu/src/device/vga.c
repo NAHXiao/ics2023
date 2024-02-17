@@ -44,7 +44,7 @@ static SDL_Texture *texture = NULL;
 static void init_screen() {
   SDL_Window *window = NULL;
   char title[128];
-  sprintf(title, "%s-NEMU", str(__GUEST_ISA__));
+  sprintf(title, "%s-NEMU", __nemu_str(__GUEST_ISA__));
   SDL_Init(SDL_INIT_VIDEO);
   SDL_CreateWindowAndRenderer(
       SCREEN_W * (MUXDEF(CONFIG_VGA_SIZE_400x300, 2, 1)),
@@ -57,7 +57,9 @@ static void init_screen() {
 }
 
 static inline void update_screen() {
-  SDL_UpdateTexture(texture, NULL, vmem, SCREEN_W * sizeof(uint32_t));
+    // printf("update_screen\n");
+  SDL_UpdateTexture(texture, NULL, vmem, SCREEN_W*sizeof(uint32_t));
+  //最后一个参数： 一行像素数据中的字节数，包括行与行之间的填充
   SDL_RenderClear(renderer);
   SDL_RenderCopy(renderer, texture, NULL, NULL);
   SDL_RenderPresent(renderer);
@@ -72,8 +74,14 @@ static inline void update_screen() {
 #endif
 
 void vga_update_screen() {
-  // TODO: call `update_screen()` when the sync register is non-zero,
+    if(vgactl_port_base[1]){
+        // printf("update_screen\n");
+        update_screen();
+        vgactl_port_base[1] = 0;
+    }
+  // DONE: call `update_screen()` when the sync register is non-zero,
   // then zero out the sync register
+  // io_write(AM_GPU_FBDRAW, 0, 0, vmem, screen_width(), screen_height(), true);
 }
 
 void init_vga() {
@@ -86,6 +94,7 @@ void init_vga() {
 #endif
 
   vmem = new_space(screen_size());
+  // printf("size: %d\n", screen_size());
   add_mmio_map("vmem", CONFIG_FB_ADDR, vmem, screen_size(), NULL);
   IFDEF(CONFIG_VGA_SHOW_SCREEN, init_screen());
   IFDEF(CONFIG_VGA_SHOW_SCREEN, memset(vmem, 0, screen_size()));

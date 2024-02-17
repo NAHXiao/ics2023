@@ -12,7 +12,7 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-
+//端口映射
 #include <device/map.h>
 
 #define PORT_IO_SPACE_MAX 65535

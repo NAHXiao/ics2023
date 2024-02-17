@@ -10,7 +10,7 @@
 static int vformat(const char *fmt, char *buf, uint32_t size, va_list args) {
   char *bufbak = buf;
   while (*fmt && size > 0) {
-        switch (*fmt) {
+    switch (*fmt) {
     case '%':
       fmt++;
       switch (*fmt++) {
@@ -20,7 +20,7 @@ static int vformat(const char *fmt, char *buf, uint32_t size, va_list args) {
         while (u / tmp >= 10) {
           tmp *= 10;
         }
-                while (tmp) {
+        while (tmp) {
           *buf++ = '0' + u / tmp;
           size--;
           u %= tmp;
@@ -39,7 +39,7 @@ static int vformat(const char *fmt, char *buf, uint32_t size, va_list args) {
         while (d / tmp >= 10) {
           tmp *= 10;
         }
-                while (tmp) {
+        while (tmp) {
           *buf++ = '0' + d / tmp;
           size--;
           d %= tmp;
@@ -61,7 +61,7 @@ static int vformat(const char *fmt, char *buf, uint32_t size, va_list args) {
         while (x / tmp >= 16) {
           tmp *= 16;
         }
-                while (tmp) {
+        while (tmp) {
           *buf++ = x / tmp >= 10 ? 'a' + x / tmp - 10 : '0' + x / tmp;
           size--;
           x %= tmp;
@@ -93,12 +93,16 @@ static int vformat(const char *fmt, char *buf, uint32_t size, va_list args) {
 }
 
 int printf(const char *fmt, ...) {
-    char buf[1024];
+  char buf[1024];
   va_list args;
   va_start(args, fmt);
-  int ret =vformat(fmt, buf, 1024, args);
+  int ret = vformat(fmt, buf, 1024, args);
   va_end(args);
-  puts(buf);
+  // puts(buf);
+  // putch('?');
+  for (int i = 0; i < ret; i++) {
+    putch(buf[i]);
+  }
   return ret;
 }
 
@@ -115,14 +119,14 @@ int sprintf(char *out, const char *fmt, ...) {
 }
 
 int snprintf(char *out, size_t n, const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    int ret = vsnprintf(out, n, fmt, ap);
-    va_end(ap);
-    return ret;
+  va_list ap;
+  va_start(ap, fmt);
+  int ret = vsnprintf(out, n, fmt, ap);
+  va_end(ap);
+  return ret;
 }
 
 int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
-    return vformat(fmt, out, n, ap);
+  return vformat(fmt, out, n, ap);
 }
 #endif

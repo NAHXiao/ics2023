@@ -25,6 +25,8 @@
  * You can modify this value as you want.
  */
 #define MAX_INST_TO_PRINT 10
+
+#ifdef CONFIG_ITRACE
 #define BufNum 20
 #define BufLen 256
 static struct {
@@ -44,17 +46,18 @@ void print_Iringbuf(word_t pc);
 void add_Iringbuf(const char *msg);
 char *decode_and_get_logbuf(word_t pc, word_t size, char *logbuf);
 
+static Decode s_next;
+static void ITrace(Decode *s);
+#endif
+
 CPU_state cpu = {};
 uint64_t g_nr_guest_inst = 0; // 执行指令数量,这些全局变量也是只能执行一次的原因
 static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
 
-static Decode s_next;
-
 void device_update();
 int updateall_wp(int *NO, uint32_t *old_val, uint32_t *new_val);
 
-static void ITrace(Decode *s);
 
 #ifdef CONFIG_WATCHPOINT
 static void check_watchpoint() {
@@ -74,6 +77,7 @@ static void check_watchpoint() {
 }
 #endif
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
+#ifdef CONFIG_ITRACE
   { // next inst
     s_next.pc = _this->dnpc;
     s_next.snpc = _this->dnpc;
@@ -81,7 +85,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
     s_next.isa.inst.val = inst_fetch(&s_next.snpc, 4);
     ITrace(&s_next);
   }
-
+#endif
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) {
     __nemu_log_write("this: %s\n", _this->logbuf);
@@ -107,35 +111,6 @@ static void exec_once(Decode *s, vaddr_t pc) {
   ITrace(s);
   add_Iringbuf(s->logbuf);
 #endif
-}
-void ITrace(Decode *s) {
-#ifdef CONFIG_ITRACE
-  char *p = s->logbuf;
-  p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
-  int ilen = s->snpc - s->pc;
-  int i;
-  uint8_t *inst = (uint8_t *)&s->isa.inst.val;
-  for (i = ilen - 1; i >= 0; i--) {
-    p += snprintf(p, 4, " %02x", inst[i]);
-  }
-  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
-  int space_len = ilen_max - ilen;
-  if (space_len < 0)
-    space_len = 0;
-  space_len = space_len * 3 + 1;
-  memset(p, ' ', space_len);
-  p += space_len;
-#ifndef CONFIG_ISA_loongarch32r
-  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-
-  disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
-              MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc),
-              (uint8_t *)&s->isa.inst.val, ilen);
-#else
-  p[0] = '\0'; // the upstream llvm does not support loongarch32r
-#endif
-#endif
-  //
 }
 // DONE
 static void execute(uint64_t n) {
@@ -164,7 +139,9 @@ static void statistic() {
 }
 
 void assert_fail_msg() {
+#ifdef CONFIG_ITRACE
   print_Iringbuf(cpu.pc);
+#endif
   isa_reg_display();
   statistic();
 }
@@ -209,7 +186,7 @@ void cpu_exec(uint64_t n) {
     statistic();
   }
 }
-
+#ifdef CONFIG_ITRACE
 void print_Iringbuf(word_t pc) {
   if (IRingBuf.empty)
     return;
@@ -279,3 +256,33 @@ char *decode_and_get_logbuf(word_t pc, word_t size,
   strcpy(logbuf, s2.logbuf);
   return logbuf;
 }
+#endif
+#ifdef CONFIG_ITRACE
+void ITrace(Decode *s) {
+  char *p = s->logbuf;
+  p += snprintf(p, sizeof(s->logbuf), FMT_WORD ":", s->pc);
+  int ilen = s->snpc - s->pc;
+  int i;
+  uint8_t *inst = (uint8_t *)&s->isa.inst.val;
+  for (i = ilen - 1; i >= 0; i--) {
+    p += snprintf(p, 4, " %02x", inst[i]);
+  }
+  int ilen_max = MUXDEF(CONFIG_ISA_x86, 8, 4);
+  int space_len = ilen_max - ilen;
+  if (space_len < 0)
+    space_len = 0;
+  space_len = space_len * 3 + 1;
+  memset(p, ' ', space_len);
+  p += space_len;
+#ifndef CONFIG_ISA_loongarch32r
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+
+  disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
+              MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc),
+              (uint8_t *)&s->isa.inst.val, ilen);
+#else
+  p[0] = '\0'; // the upstream llvm does not support loongarch32r
+#endif
+  //
+}
+#endif

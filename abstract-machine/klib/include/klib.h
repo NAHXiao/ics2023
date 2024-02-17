@@ -8,8 +8,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-//取消注释以链接到klib而不是glie
-#define __NATIVE_USE_KLIB__
+//取消注释以链接到klib而不是glie(仅native)
+// #define __NATIVE_USE_KLIB__
+
 //为什么定义宏__NATIVE_USE_KLIB__之后就可以把native上的这些库函数链接到klib? 这具体是如何发生的? 尝试根据你在课堂上学习的链接相关的知识解释这一现象.
 //因为这些函数在klib中的定义和实现有
 //#if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)

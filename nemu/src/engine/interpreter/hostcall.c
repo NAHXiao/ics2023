@@ -63,6 +63,6 @@ __attribute__((noinline)) void invalid_inst(vaddr_t thispc) {
          isa_logo);
   // char buf[128];
   // add_Iringbuf("new: ");
-  print_Iringbuf(thispc);
+  IFDEF(CONFIG_ITRACE,print_Iringbuf(thispc));
   set_nemu_state(NEMU_ABORT, thispc, -1);
 }

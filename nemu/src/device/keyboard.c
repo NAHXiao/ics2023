@@ -66,8 +66,10 @@ static uint32_t key_dequeue() {
 
 void send_key(uint8_t scancode, bool is_keydown) {
   if (nemu_state.state == NEMU_RUNNING && keymap[scancode] != NEMU_KEY_NONE) {
+      //
     uint32_t am_scancode = keymap[scancode] | (is_keydown ? KEYDOWN_MASK : 0);
     key_enqueue(am_scancode);
+    MyLog("send_key: %08x\n", am_scancode);
   }
 }
 #else // !CONFIG_TARGET_AM
@@ -92,8 +94,11 @@ void init_i8042() {
   i8042_data_port_base = (uint32_t *)new_space(4);
   i8042_data_port_base[0] = NEMU_KEY_NONE;
 #ifdef CONFIG_HAS_PORT_IO
+  // printf("CONFIG_HAS_PORT_IO");
   add_pio_map ("keyboard", CONFIG_I8042_DATA_PORT, i8042_data_port_base, 4, i8042_data_io_handler);
 #else
+  // printf("CONFIG_HAS_MMIO");
+  // CONFIG_I8042_DATA_MMIO=0xa0000060
   add_mmio_map("keyboard", CONFIG_I8042_DATA_MMIO, i8042_data_port_base, 4, i8042_data_io_handler);
 #endif
   IFNDEF(CONFIG_TARGET_AM, init_keymap());
